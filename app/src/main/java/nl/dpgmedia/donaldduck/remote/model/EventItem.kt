@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 @Serializable
 @JsonClassDiscriminator("eventType")
-internal sealed class EventItem {
+sealed class EventItem {
 
     abstract val eventId: Long
     abstract val puzzleId: Long

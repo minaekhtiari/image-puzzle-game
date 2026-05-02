@@ -10,7 +10,7 @@ import retrofit2.http.GET
 import retrofit2.http.PUT
 import kotlin.random.Random
 
-internal interface PuzzleService {
+interface PuzzleService {
 
     @GET("/puzzle")
     suspend fun getPuzzle(): Response<PuzzleItem>

@@ -1,4 +1,4 @@
-package nl.dpgmedia.donaldduck.remote.model
+package nl.dpgmedia.donaldduck.data.remote.model
 
 import kotlinx.serialization.Serializable
 

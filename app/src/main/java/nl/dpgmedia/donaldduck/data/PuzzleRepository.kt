@@ -1,7 +1,7 @@
 package nl.dpgmedia.donaldduck.data
 
-import nl.dpgmedia.donaldduck.remote.model.EventItem
-import nl.dpgmedia.donaldduck.remote.model.PuzzleItem
+import nl.dpgmedia.donaldduck.data.remote.model.EventItem
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzleItem
 
 interface PuzzleRepository {
     suspend fun getPuzzle(): PuzzleItem

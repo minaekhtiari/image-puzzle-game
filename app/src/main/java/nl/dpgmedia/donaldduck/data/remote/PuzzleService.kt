@@ -1,8 +1,8 @@
-package nl.dpgmedia.donaldduck.remote
+package nl.dpgmedia.donaldduck.data.remote
 
 import kotlinx.coroutines.delay
-import nl.dpgmedia.donaldduck.remote.model.EventItem
-import nl.dpgmedia.donaldduck.remote.model.PuzzleItem
+import nl.dpgmedia.donaldduck.data.remote.model.EventItem
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzleItem
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body

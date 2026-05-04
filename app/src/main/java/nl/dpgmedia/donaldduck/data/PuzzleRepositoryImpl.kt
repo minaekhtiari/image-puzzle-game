@@ -1,8 +1,8 @@
 package nl.dpgmedia.donaldduck.data
 
-import nl.dpgmedia.donaldduck.remote.PuzzleService
-import nl.dpgmedia.donaldduck.remote.model.EventItem
-import nl.dpgmedia.donaldduck.remote.model.PuzzleItem
+import nl.dpgmedia.donaldduck.data.remote.PuzzleService
+import nl.dpgmedia.donaldduck.data.remote.model.EventItem
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzleItem
 import javax.inject.Inject
 
  class PuzzleRepositoryImpl @Inject constructor(

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package nl.dpgmedia.donaldduck.remote.model
+package nl.dpgmedia.donaldduck.data.remote.model
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName

@@ -9,8 +9,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
-import nl.dpgmedia.donaldduck.remote.FakePuzzleService
-import nl.dpgmedia.donaldduck.remote.PuzzleService
+import nl.dpgmedia.donaldduck.data.remote.FakePuzzleService
+import nl.dpgmedia.donaldduck.data.remote.PuzzleService
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

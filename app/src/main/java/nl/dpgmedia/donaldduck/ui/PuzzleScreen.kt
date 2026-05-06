@@ -40,6 +40,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
+import nl.dpgmedia.donaldduck.R
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -48,8 +51,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.dpgmedia.donaldduck.domain.PuzzleGameEngine
 import kotlin.math.roundToInt
 
-
-private val MaxBoardWidth = 600.dp
 
 @Composable
 fun PuzzleRoute(
@@ -131,8 +132,8 @@ private fun LoadingContent() {
     ) {
         CircularProgressIndicator()
         Text(
-            modifier = Modifier.padding(top = 80.dp),
-            text = "Loading...",
+            modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_80)),
+            text = stringResource(R.string.puzzle_loading),
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -146,7 +147,7 @@ private fun ErrorContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(dimensionResource(R.dimen.spacing_xxl)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -156,10 +157,10 @@ private fun ErrorContent(
         )
 
         Button(
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_lg)),
             onClick = onRetry
         ) {
-            Text("Retry")
+            Text(stringResource(R.string.puzzle_error_retry))
         }
     }
 }
@@ -185,25 +186,25 @@ private fun PuzzleContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(16.dp)
+            .padding(dimensionResource(R.dimen.spacing_lg))
     ) {
         Text(
-            modifier = Modifier.padding(top = 20.dp),
+            modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_xl)),
             text = title,
             style = MaterialTheme.typography.headlineSmall
         )
 
         if (author.isNotBlank()) {
             Text(
-                modifier = Modifier.padding(top = 4.dp),
-                text = "By $author",
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_xs)),
+                text = stringResource(R.string.puzzle_author_prefix, author),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
         if (description.isNotBlank()) {
             Text(
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_sm)),
                 text = description,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -211,7 +212,7 @@ private fun PuzzleContent(
 
         PuzzleBoard(
             modifier = Modifier
-                .padding(top = 20.dp)
+                .padding(top = dimensionResource(R.dimen.spacing_xl))
                 .fillMaxWidth(),
             imageState = imageState,
             pieces = pieces,
@@ -223,38 +224,39 @@ private fun PuzzleContent(
 
         if (isSolved) {
             Text(
-                modifier = Modifier.padding(top = 20.dp),
-                text = "Puzzle completed 🎉 Solved in ${formatDuration(elapsedTimeInMs)}",
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_xl)),
+                text = stringResource(R.string.puzzle_solved_message,
+                    formatDuration(elapsedTimeInMs)),
                 style = MaterialTheme.typography.titleMedium
             )
             if (isTrackingEvent) {
                 Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    text = "Saving your result...",
+                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_sm)),
+                    text = stringResource(R.string.puzzle_saving_result),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
             if (eventTrackingFailed) {
                 Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    text = "Could not save your result.",
+                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_sm)),
+                    text = stringResource(R.string.puzzle_save_failed),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 Button(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_sm)),
                     onClick = onRetryTrackingEvent
                 ) {
-                    Text("Retry saving result")
+                    Text(stringResource(R.string.puzzle_retry_save))
                 }
             }
 
             Button(
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = dimensionResource(R.dimen.spacing_md)),
                 onClick = onRestart
             ) {
-                Text("Play again")
+                Text(stringResource(R.string.puzzle_play_again))
             }
         }
     }
@@ -273,18 +275,24 @@ private fun PuzzleBoard(
     var draggedGroupRange by remember { mutableStateOf<IntRange?>(null) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
+    val boardMaxWidth = dimensionResource(R.dimen.puzzle_board_max_width)
+    val minTileHeight = dimensionResource(R.dimen.puzzle_tile_min_height)
+    val cardCornerRadius = dimensionResource(R.dimen.card_corner_radius)
+    val cardElevation = dimensionResource(R.dimen.card_elevation)
+    val dragShadowElevation = dimensionResource(R.dimen.drag_shadow_elevation).value
+    val hoverShadowElevation = dimensionResource(R.dimen.hover_shadow_elevation).value
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentWidth(Alignment.CenterHorizontally)
-            .widthIn(max = MaxBoardWidth)
+            .widthIn(max = boardMaxWidth)
     ) {
         val boardWidth = maxWidth
-        val minTileHeight = 56.dp
-        val minBoardHeight = minTileHeight * PuzzleGameEngine.Companion.TILE_COUNT
+        val minBoardHeight = minTileHeight * PuzzleGameEngine.TILE_COUNT
         val calculatedBoardHeight = boardWidth * imageState.aspectRatio
         val boardHeight = if (calculatedBoardHeight < minBoardHeight) minBoardHeight else calculatedBoardHeight
-        val tileHeight = boardHeight / PuzzleGameEngine.Companion.TILE_COUNT
+        val tileHeight = boardHeight / PuzzleGameEngine.TILE_COUNT
         val tileHeightPx = with(LocalDensity.current) { tileHeight.toPx() }
 
         val dragState: Pair<IntRange, IntRange>? = draggedGroupRange?.let { range ->
@@ -298,8 +306,8 @@ private fun PuzzleBoard(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            shape = RoundedCornerShape(cardCornerRadius),
+            elevation = CardDefaults.cardElevation(defaultElevation = cardElevation)
         ) {
             Box(
                 modifier = Modifier
@@ -311,7 +319,7 @@ private fun PuzzleBoard(
                 when {
                     imageState.isLoading -> CircularProgressIndicator()
                     imageState.loadFailed -> Text(
-                        text = "Could not load puzzle image",
+                        text = stringResource(R.string.puzzle_image_load_failed),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     else -> {
@@ -332,7 +340,7 @@ private fun PuzzleBoard(
                                 ?: return@forEachIndexed
 
                             val isInDraggedGroup = dragState?.first?.contains(index) == true
-                       
+
                             val isInHoveredGroup = dragState != null
                                 && dragState.second != dragState.first
                                 && dragState.second.contains(index)
@@ -361,8 +369,8 @@ private fun PuzzleBoard(
                                     })
                                     .graphicsLayer {
                                         shadowElevation = when {
-                                            isInDraggedGroup -> 16f
-                                            isInHoveredGroup -> 8f
+                                            isInDraggedGroup -> dragShadowElevation
+                                            isInHoveredGroup -> hoverShadowElevation
                                             else -> 0f
                                         }
                                     }
@@ -421,18 +429,22 @@ private fun PuzzleTile(
     isConnectedToPrevious: Boolean,
     isConnectedToNext: Boolean
 ) {
+    val cornerRadius = dimensionResource(R.dimen.puzzle_tile_corner_radius)
+    val paddingHorizontal = dimensionResource(R.dimen.puzzle_tile_padding_horizontal)
+    val paddingVertical = dimensionResource(R.dimen.puzzle_tile_padding_vertical)
+
     val shape = RoundedCornerShape(
-        topStart = if (isConnectedToPrevious) 0.dp else 6.dp,
-        topEnd = if (isConnectedToPrevious) 0.dp else 6.dp,
-        bottomStart = if (isConnectedToNext) 0.dp else 6.dp,
-        bottomEnd = if (isConnectedToNext) 0.dp else 6.dp
+        topStart = if (isConnectedToPrevious) 0.dp else cornerRadius,
+        topEnd = if (isConnectedToPrevious) 0.dp else cornerRadius,
+        bottomStart = if (isConnectedToNext) 0.dp else cornerRadius,
+        bottomEnd = if (isConnectedToNext) 0.dp else cornerRadius
     )
 
-    val verticalPadding = if (isConnectedToPrevious || isConnectedToNext) 0.dp else 1.dp
+    val verticalPadding = if (isConnectedToPrevious || isConnectedToNext) 0.dp else paddingVertical
 
     Box(
         modifier = modifier
-            .padding(horizontal = 1.dp, vertical = verticalPadding)
+            .padding(paddingHorizontal, vertical = verticalPadding)
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {

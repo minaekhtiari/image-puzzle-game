@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Donald Duck</string>
+    <!-- Loading / Error -->
+    <string name="puzzle_loading">Loading…</string>
+    <string name="puzzle_error_retry">Retry</string>
+    <string name="puzzle_image_load_failed">Could not load puzzle image</string>
+
+    <!-- Puzzle info -->
+    <string name="puzzle_author_prefix">By %s</string>
+
+    <!-- Solved state -->
+    <string name="puzzle_solved_message">Puzzle completed 🎉 Solved in %s</string>
+    <string name="puzzle_saving_result">Saving your result…</string>
+    <string name="puzzle_save_failed">Could not save your result.</string>
+    <string name="puzzle_retry_save">Retry saving result</string>
+    <string name="puzzle_play_again">Play again</string>
 </resources>

@@ -1,17 +1,21 @@
 package nl.dpgmedia.donaldduck.domain
 
-import nl.dpgmedia.donaldduck.ui.PuzzlePieceUi
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzlePiece
 import javax.inject.Inject
 import kotlin.random.Random
 
+private fun IntRange.overlaps(other: IntRange) = first <= other.last && other.first <= last
+
 class PuzzleGameEngine @Inject constructor() {
 
+    // Two-phase: build a solved list first, then shuffle and re-assign currentIndex.
+    // Keeping correctIndex stable means isSolved() is always a simple equality check.
     fun createShuffledPieces(
         tileCount: Int = TILE_COUNT,
         random: Random = Random.Default
-    ): List<PuzzlePieceUi> {
+    ): List<PuzzlePiece> {
         val solvedPieces = List(tileCount) { index ->
-            PuzzlePieceUi(
+            PuzzlePiece(
                 id = index,
                 correctIndex = index,
                 currentIndex = index
@@ -26,10 +30,10 @@ class PuzzleGameEngine @Inject constructor() {
     }
 
     fun swapGroups(
-        pieces: List<PuzzlePieceUi>,
+        pieces: List<PuzzlePiece>,
         fromGroupStart: Int,
         toGroupStart: Int
-    ): List<PuzzlePieceUi> {
+    ): List<PuzzlePiece> {
         if (fromGroupStart == toGroupStart) return pieces
 
         val orderedPieces = pieces.sortedBy { it.currentIndex }
@@ -44,8 +48,7 @@ class PuzzleGameEngine @Inject constructor() {
 
         val targetRange = toGroupStart..<toGroupStart + groupSize
 
-        val overlaps = groupRange.first <= targetRange.last && targetRange.first <= groupRange.last
-        if (overlaps) return pieces
+        if (groupRange.overlaps(targetRange)) return pieces
 
         val result = orderedPieces.toMutableList()
 
@@ -59,8 +62,11 @@ class PuzzleGameEngine @Inject constructor() {
         return result
     }
 
+    // Walks outward from [index] in both directions, expanding the range as long as
+    // adjacent pieces have consecutive correctIndex values (i.e. they belong together
+    // in the solved image). Returns the widest contiguous run that includes [index].
     fun findConnectedGroupRange(
-        pieces: List<PuzzlePieceUi>,
+        pieces: List<PuzzlePiece>,
         index: Int
     ): IntRange {
         val orderedPieces = pieces.sortedBy { it.currentIndex }
@@ -101,7 +107,7 @@ class PuzzleGameEngine @Inject constructor() {
         return start..end
     }
 
-    fun isSolved(pieces: List<PuzzlePieceUi>): Boolean {
+    fun isSolved(pieces: List<PuzzlePiece>): Boolean {
         return pieces.all { piece ->
             piece.currentIndex == piece.correctIndex
         }

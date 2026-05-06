@@ -1,6 +1,6 @@
 package nl.dpgmedia.donaldduck.ui
 
-import nl.dpgmedia.donaldduck.ui.PuzzlePieceUi
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzlePiece
 
 sealed class PuzzleUiState {
 
@@ -14,7 +14,7 @@ sealed class PuzzleUiState {
         val description: String,
         val author: String,
         val imageUrl: String,
-        val pieces: List<PuzzlePieceUi>
+        val pieces: List<PuzzlePiece>
     ) : PuzzleUiState()
 
     data class Solved(
@@ -23,7 +23,7 @@ sealed class PuzzleUiState {
         val description: String,
         val author: String,
         val imageUrl: String,
-        val pieces: List<PuzzlePieceUi>,
+        val pieces: List<PuzzlePiece>,
         val elapsedTimeInMs: Long,
         val isTrackingEvent: Boolean = false,
         val eventTrackingFailed: Boolean = false

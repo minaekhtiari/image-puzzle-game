@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import nl.dpgmedia.donaldduck.data.remote.model.PuzzlePiece
 import nl.dpgmedia.donaldduck.domain.PuzzleGameEngine
 import kotlin.math.roundToInt
 
@@ -171,7 +172,7 @@ private fun PuzzleContent(
     author: String,
     description: String,
     imageState: PuzzleImageUiState,
-    pieces: List<PuzzlePieceUi>,
+    pieces: List<PuzzlePiece>,
     isSolved: Boolean,
     elapsedTimeInMs: Long,
     isTrackingEvent: Boolean,
@@ -266,7 +267,7 @@ private fun PuzzleContent(
 private fun PuzzleBoard(
     modifier: Modifier = Modifier,
     imageState: PuzzleImageUiState,
-    pieces: List<PuzzlePieceUi>,
+    pieces: List<PuzzlePiece>,
     enabled: Boolean,
     isSolved: Boolean,
     getConnectedGroupRange: (index: Int) -> IntRange,
@@ -295,13 +296,11 @@ private fun PuzzleBoard(
         val tileHeight = boardHeight / PuzzleGameEngine.TILE_COUNT
         val tileHeightPx = with(LocalDensity.current) { tileHeight.toPx() }
 
+        // Keep hoveredRange equal to draggedRange when the target overlaps,
+        // so overlapping drops do not show a misleading preview.
         val dragState: Pair<IntRange, IntRange>? = draggedGroupRange?.let { range ->
-            val groupSize = range.last - range.first + 1
-            val targetStart = (range.first + (dragOffsetY / tileHeightPx).roundToInt())
-                .coerceIn(0, pieces.size - groupSize)
-            val targetRange = targetStart..<targetStart + groupSize
-            val overlaps = range.first <= targetRange.last && targetRange.first <= range.last
-            range to if (overlaps) range else targetRange
+            val targetRange = resolveDropTarget(range, dragOffsetY, tileHeightPx, pieces.size)
+            range to if (range.overlaps(targetRange)) range else targetRange
         }
 
         Card(
@@ -323,6 +322,8 @@ private fun PuzzleBoard(
                         style = MaterialTheme.typography.bodyMedium
                     )
                     else -> {
+                        // On solve, replace the tile grid with the seamless full image
+                        // so the player sees the completed picture without tile gaps.
                         if (isSolved && imageState.fullImageBitmap != null) {
                             Image(
                                 bitmap = imageState.fullImageBitmap,
@@ -394,15 +395,9 @@ private fun PuzzleBoard(
                                             onDragEnd = {
                                                 val range = draggedGroupRange
                                                 if (range != null) {
-                                                    val groupSize = range.last - range.first + 1
-                                                    val targetStart = (range.first + (dragOffsetY / tileHeightPx).roundToInt())
-                                                        .coerceIn(0, pieces.size - groupSize)
-                                                 //   val targetRange = targetStart..(targetStart + groupSize - 1)
-                                                    val targetRange = targetStart ..< targetStart + groupSize
-                                                    val overlaps = range.first <= targetRange.last && targetRange.first <= range.last
-
-                                                    if (!overlaps && targetStart != range.first) {
-                                                        onMovePiece(range.first, targetStart)
+                                                    val targetRange = resolveDropTarget(range, dragOffsetY, tileHeightPx, pieces.size)
+                                                    if (!range.overlaps(targetRange) && targetRange.first != range.first) {
+                                                        onMovePiece(range.first, targetRange.first)
                                                     }
                                                 }
                                                 draggedGroupRange = null
@@ -433,6 +428,8 @@ private fun PuzzleTile(
     val paddingHorizontal = dimensionResource(R.dimen.puzzle_tile_padding_horizontal)
     val paddingVertical = dimensionResource(R.dimen.puzzle_tile_padding_vertical)
 
+    // Connected tiles share an edge, so we zero the corners and padding on that edge
+    // to make the group appear as a single unbroken block visually.
     val shape = RoundedCornerShape(
         topStart = if (isConnectedToPrevious) 0.dp else cornerRadius,
         topEnd = if (isConnectedToPrevious) 0.dp else cornerRadius,
@@ -458,7 +455,7 @@ private fun PuzzleTile(
 }
 
 private fun isConnectedToPrevious(
-    orderedPieces: List<PuzzlePieceUi>,
+    orderedPieces: List<PuzzlePiece>,
     index: Int
 ): Boolean {
     if (index == 0) return false
@@ -468,13 +465,30 @@ private fun isConnectedToPrevious(
 }
 
 private fun isConnectedToNext(
-    orderedPieces: List<PuzzlePieceUi>,
+    orderedPieces: List<PuzzlePiece>,
     index: Int
 ): Boolean {
     if (index == orderedPieces.lastIndex) return false
     val current = orderedPieces[index]
     val next = orderedPieces[index + 1]
     return current.correctIndex + 1 == next.correctIndex
+}
+
+private fun IntRange.overlaps(other: IntRange) = first <= other.last && other.first <= last
+
+// Converts the current drag offset into a target slot range for the dragged group.
+// Divides the raw pixel offset by tile height to get a slot delta, then clamps
+// so the group never extends beyond the board boundaries.
+private fun resolveDropTarget(
+    draggedRange: IntRange,
+    dragOffsetY: Float,
+    tileHeightPx: Float,
+    piecesSize: Int
+): IntRange {
+    val groupSize = draggedRange.last - draggedRange.first + 1
+    val targetStart = (draggedRange.first + (dragOffsetY / tileHeightPx).roundToInt())
+        .coerceIn(0, piecesSize - groupSize)
+    return targetStart..<targetStart + groupSize
 }
 
 private fun formatDuration(durationInMs: Long): String {

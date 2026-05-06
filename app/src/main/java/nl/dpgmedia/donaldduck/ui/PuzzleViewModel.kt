@@ -31,7 +31,9 @@ class PuzzleViewModel @Inject constructor(
     val imageState: StateFlow<PuzzleImageUiState> = _imageState.asStateFlow()
 
     private var startedAtMs: Long = 0L
-    private var eventAlreadySent = false
+    // Guards against sending the event twice if retryTrackingEvent() is called
+    // while a request is already in-flight. Reset to false on failure so retries work.
+    private var isTrackingEventInProgress  = false
 
     init {
         loadPuzzle()
@@ -40,12 +42,15 @@ class PuzzleViewModel @Inject constructor(
     fun loadPuzzle() {
         viewModelScope.launch {
             _uiState.value = PuzzleUiState.Loading
+            // Clear stale image state while the board is hidden, so there is no
+            // flash of the previous puzzle's image or error when Playing is shown next.
+            _imageState.value = PuzzleImageUiState()
 
             runCatching {
                 repository.getPuzzle()
             }.onSuccess { puzzle ->
                 startedAtMs = System.currentTimeMillis()
-                eventAlreadySent = false
+                isTrackingEventInProgress  = false
 
                 _uiState.value = PuzzleUiState.Playing(
                     puzzleId = puzzle.id,
@@ -56,6 +61,7 @@ class PuzzleViewModel @Inject constructor(
                     pieces = gameEngine.createShuffledPieces()
                 )
 
+                // UI shows Playing immediately; image loads concurrently in its own coroutine.
                 loadImage(puzzle.thumbnail)
             }.onFailure { throwable ->
                 _uiState.value = PuzzleUiState.Error(
@@ -118,7 +124,7 @@ class PuzzleViewModel @Inject constructor(
         val currentState = _uiState.value as? PuzzleUiState.Solved ?: return
 
         startedAtMs = System.currentTimeMillis()
-        eventAlreadySent = false
+        isTrackingEventInProgress  = false
 
         _uiState.value = PuzzleUiState.Playing(
             puzzleId = currentState.puzzleId,
@@ -131,10 +137,12 @@ class PuzzleViewModel @Inject constructor(
     }
 
     private fun trackGameFinished() {
+        // Snapshot the Solved state before launching the coroutine so the payload
+        // sent to the backend can't be affected by a concurrent state transition.
         val state = _uiState.value as? PuzzleUiState.Solved ?: return
-        if (eventAlreadySent) return
+        if (isTrackingEventInProgress  ) return
 
-        eventAlreadySent = true
+        isTrackingEventInProgress  = true
 
         viewModelScope.launch {
             _uiState.update { current ->
@@ -153,7 +161,7 @@ class PuzzleViewModel @Inject constructor(
                     (current as? PuzzleUiState.Solved)?.copy(isTrackingEvent = false, eventTrackingFailed = false) ?: current
                 }
             }.onFailure {
-                eventAlreadySent = false
+                isTrackingEventInProgress  = false
                 _uiState.update { current ->
                     (current as? PuzzleUiState.Solved)?.copy(isTrackingEvent = false, eventTrackingFailed = true) ?: current
                 }

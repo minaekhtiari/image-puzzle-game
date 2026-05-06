@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 import nl.dpgmedia.donaldduck.data.PuzzleRepository
 import nl.dpgmedia.donaldduck.domain.PuzzleGameEngine
 import nl.dpgmedia.donaldduck.domain.PuzzleImageLoader
-import nl.dpgmedia.donaldduck.domain.PuzzleImageResult
 import nl.dpgmedia.donaldduck.domain.PuzzleImageSlicer
+import nl.dpgmedia.donaldduck.domain.PuzzleImageResult
 import nl.dpgmedia.donaldduck.data.remote.model.EventItem
 import javax.inject.Inject
 
@@ -21,7 +21,8 @@ import javax.inject.Inject
 class PuzzleViewModel @Inject constructor(
     private val repository: PuzzleRepository,
     private val gameEngine: PuzzleGameEngine,
-    private val imageLoader: PuzzleImageLoader
+    private val imageLoader: PuzzleImageLoader,
+    private val imageSlicer: PuzzleImageSlicer
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PuzzleUiState>(PuzzleUiState.Loading)
@@ -76,7 +77,7 @@ class PuzzleViewModel @Inject constructor(
             _imageState.value = PuzzleImageUiState(isLoading = true)
             _imageState.value = when (val result = imageLoader.load(url)) {
                 is PuzzleImageResult.Success -> PuzzleImageUiState(
-                    tileBitmaps = PuzzleImageSlicer.sliceHorizontally(result.bitmap),
+                    tileBitmaps = imageSlicer.sliceHorizontally(result.bitmap),
                     fullImageBitmap = result.bitmap.asImageBitmap(),
                     aspectRatio = result.bitmap.height.toFloat() / result.bitmap.width.toFloat()
                 )
